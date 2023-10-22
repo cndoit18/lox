@@ -7,7 +7,7 @@ import (
 )
 
 type scanner struct {
-	tokens         []*token
+	tokens         []*Token
 	buf            []byte
 	current, start int
 	line           int
@@ -81,7 +81,7 @@ func ternaryConditional[T any](conditional bool, y T, n T) T {
 	return n
 }
 
-func (s *scanner) ScanTokens() ([]*token, error) {
+func (s *scanner) ScanTokens() ([]*Token, error) {
 	for !s.isAtEnd() {
 		s.start = s.current
 		s.scantoken()
@@ -260,6 +260,6 @@ func NewScanner(src io.Reader) *scanner {
 		buf:    make([]byte, 0, 512),
 		src:    src,
 		line:   1,
-		tokens: make([]*token, 0),
+		tokens: make([]*Token, 0),
 	}
 }
