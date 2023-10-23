@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 )
@@ -10,19 +11,13 @@ func TestVisitor(t *testing.T) {
 		Left: &UnaryExpr[string]{
 			Token: NewToken(MINUS, "-", nil, 1),
 			Right: &LiteralExpr[string]{
-				value: func() *string {
-					x := "123"
-					return &x
-				}(),
+				value: "123",
 			},
 		},
 		Token: NewToken(STAR, "*", nil, 1),
 		Right: &GroupingExpr[string]{
 			Expression: &LiteralExpr[string]{
-				value: func() *string {
-					x := "45.67"
-					return &x
-				}(),
+				value: 45.5,
 			},
 		},
 	}
@@ -51,7 +46,7 @@ func (p *AstPrinter) VisitorLiteralExpr(e *LiteralExpr[string]) string {
 	if e.value == nil {
 		return "nil"
 	}
-	return *e.value
+	return fmt.Sprint(e.value)
 }
 
 func (p *AstPrinter) parenthesize(name string, exprs ...Expr[string]) string {

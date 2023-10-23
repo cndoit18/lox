@@ -23,7 +23,7 @@ func (e *GroupingExpr[T]) Accept(v Visitor[T]) T {
 }
 
 type LiteralExpr[T any] struct {
-	value *string
+	value any
 }
 
 func (e *LiteralExpr[T]) Accept(v Visitor[T]) T {
