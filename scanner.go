@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"io"
 	"strconv"
 )
@@ -188,19 +187,12 @@ func (s *scanner) readNumber() {
 		}
 	}
 	literal := s.buf[s.start:s.current]
-	if bytes.Contains(literal, []byte{'.'}) {
-		f, err := strconv.ParseFloat(string(literal), 64)
-		if err != nil {
-			panic(err)
-		}
-		s.addTokenWithLiteral(NUMBER, f)
-		return
-	}
-	f, err := strconv.ParseInt(string(literal), 10, 64)
+	f, err := strconv.ParseFloat(string(literal), 64)
 	if err != nil {
 		panic(err)
 	}
 	s.addTokenWithLiteral(NUMBER, f)
+	return
 }
 
 func isDigit(c byte) bool {
