@@ -1,16 +1,25 @@
 package main
 
-import "reflect"
+import (
+	"fmt"
+	"reflect"
+)
 
-var _ Visitor[any] = &Interpreter{}
+var _ Visitor[any] = &interpreter{}
 
-type Interpreter struct{}
+func NewInterpreter() *interpreter {
+	return &interpreter{}
+}
 
-func (i *Interpreter) VisitorBinaryExpr(e *BinaryExpr[any]) any {
+type interpreter struct {
+}
+
+func (i *interpreter) VisitorBinaryExpr(e *BinaryExpr[any]) any {
 	left := i.evaluate(e.Left)
 	right := i.evaluate(e.Right)
 	switch e.Token.t {
 	case MINUS:
+		i.checkNumberOperands(e.Token, left, right)
 		return left.(float64) - right.(float64)
 	case PLUS:
 		ls, lok := left.(string)
@@ -18,36 +27,43 @@ func (i *Interpreter) VisitorBinaryExpr(e *BinaryExpr[any]) any {
 		if lok && rok {
 			return ls + rs
 		}
+		i.checkNumberOperands(e.Token, left, right)
 		return left.(float64) + right.(float64)
 	case SLASH:
+		i.checkNumberOperands(e.Token, left, right)
 		return left.(float64) / right.(float64)
 	case STAR:
+		i.checkNumberOperands(e.Token, left, right)
 		return left.(float64) * right.(float64)
 	case GREATER:
+		i.checkNumberOperands(e.Token, left, right)
 		return left.(float64) > right.(float64)
 	case GREATER_EQUAL:
+		i.checkNumberOperands(e.Token, left, right)
 		return left.(float64) >= right.(float64)
 	case LESS:
+		i.checkNumberOperands(e.Token, left, right)
 		return left.(float64) < right.(float64)
 	case LESS_EQUAL:
+		i.checkNumberOperands(e.Token, left, right)
 		return left.(float64) <= right.(float64)
 	case BANG_EQUAL:
 		return !reflect.DeepEqual(left, right)
-	case EQUAL:
+	case EQUAL_EQUAL:
 		return reflect.DeepEqual(left, right)
 	}
 	return nil
 }
 
-func (i *Interpreter) VisitorGroupingExpr(e *GroupingExpr[any]) any {
+func (i *interpreter) VisitorGroupingExpr(e *GroupingExpr[any]) any {
 	return i.evaluate(e.Expression)
 }
 
-func (i *Interpreter) VisitorLiteralExpr(e *LiteralExpr[any]) any {
+func (i *interpreter) VisitorLiteralExpr(e *LiteralExpr[any]) any {
 	return e.value
 }
 
-func (i *Interpreter) VisitorUnaryExpr(e *UnaryExpr[any]) any {
+func (i *interpreter) VisitorUnaryExpr(e *UnaryExpr[any]) any {
 	right := i.evaluate(e.Right)
 	switch e.Token.t {
 	case MINUS:
@@ -58,8 +74,38 @@ func (i *Interpreter) VisitorUnaryExpr(e *UnaryExpr[any]) any {
 	return nil
 }
 
-func (i *Interpreter) evaluate(e Expr[any]) any {
+func (i *interpreter) evaluate(e Expr[any]) any {
+	if e == nil {
+		return nil
+	}
 	return e.Accept(i)
+}
+
+func (i *interpreter) checkNumberOperands(operator *Token, left, right any) {
+
+	if _, ok := left.(float64); !ok {
+		panic(NewRuntimeError(operator, "Operands must be numbers."))
+	}
+	if _, ok := right.(float64); !ok {
+		panic(NewRuntimeError(operator, "Operands must be numbers."))
+	}
+
+}
+
+func NewRuntimeError(token *Token, msg string) error {
+	return &runtimeError{
+		token: token,
+		msg:   msg,
+	}
+}
+
+type runtimeError struct {
+	token *Token
+	msg   string
+}
+
+func (r *runtimeError) Error() string {
+	return fmt.Sprintf("%s\n[line: %d]", r.msg, r.token.line)
 }
 
 // helper

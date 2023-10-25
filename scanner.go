@@ -233,9 +233,10 @@ func isAlphaNumeric(c byte) bool {
 }
 
 func (s *scanner) identifier() {
-	for isAlphaNumeric(s.peek()) {
+	for !s.isAtEnd() && isAlphaNumeric(s.peek()) {
 		s.advance()
 	}
+
 	if t, ok := Keywords[string(s.buf[s.start:s.current])]; ok {
 		s.addToken(t)
 		return

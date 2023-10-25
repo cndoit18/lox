@@ -6,7 +6,7 @@ import (
 )
 
 func TestParser(t *testing.T) {
-	scanner := NewScanner(strings.NewReader("3 * 3 \"- 5 / 3 + /*4 * ( 2 + 4)"))
+	scanner := NewScanner(strings.NewReader("3==3"))
 	tokens := scanner.ScanTokens()
 	parse := NewParser[string](tokens...)
 	expr := parse.Parse()
