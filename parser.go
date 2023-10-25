@@ -140,7 +140,7 @@ func (p *parser[T]) match(tks ...TokenType) bool {
 }
 
 func (p *parser[T]) isAtEnd() bool {
-	return p.peek().t == EOF
+	return len(p.tokens) == int(p.current) || p.peek().t == EOF
 }
 
 func (p *parser[T]) advance() *Token {

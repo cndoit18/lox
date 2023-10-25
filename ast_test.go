@@ -54,6 +54,9 @@ func (p *AstPrinter) parenthesize(name string, exprs ...Expr[string]) string {
 	builder.WriteByte('(')
 	builder.WriteString(name)
 	for _, expr := range exprs {
+		if expr == nil {
+			continue
+		}
 		builder.WriteByte(' ')
 		builder.WriteString(expr.Accept(p))
 	}

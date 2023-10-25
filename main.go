@@ -30,8 +30,9 @@ func runFile(path string) error {
 }
 
 func run(r io.Reader) error {
-	tokens, err := NewScanner(r).ScanTokens()
-	if err != nil {
+	scan := NewScanner(r)
+	tokens := NewScanner(r).ScanTokens()
+	if err := scan.Err(); err != nil {
 		return err
 	}
 	object := NewParser[any](tokens...).Parse().Accept(&Interpreter{})

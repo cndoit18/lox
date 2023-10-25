@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"io"
 	"strconv"
 )
@@ -10,18 +11,22 @@ type scanner struct {
 	buf            []byte
 	current, start int
 	line           int
-	err            error
+	errs           []error
 	src            io.Reader
 }
 
+func (s *scanner) Err() error {
+	return errors.Join(s.errs...)
+}
+
 func (s *scanner) fill() {
-	if s.err != nil {
+	if len(s.errs) > 0 {
 		return
 	}
 
 	n, err := s.src.Read(s.buf[len(s.buf):cap(s.buf)])
 	if err != nil && err != io.EOF {
-		s.err = err
+		s.errs = append(s.errs, err)
 	}
 
 	s.buf = s.buf[:len(s.buf)+n]
@@ -32,7 +37,7 @@ func (s *scanner) fill() {
 
 func (s *scanner) isAtEnd() bool {
 	s.fill()
-	if s.err != nil {
+	if len(s.errs) > 0 {
 		return true
 	}
 
@@ -80,16 +85,15 @@ func ternaryConditional[T any](conditional bool, y T, n T) T {
 	return n
 }
 
-func (s *scanner) ScanTokens() ([]*Token, error) {
+func (s *scanner) ScanTokens() []*Token {
 	for !s.isAtEnd() {
 		s.start = s.current
 		s.scantoken()
 	}
-	if s.err != nil {
-		return nil, s.err
+	if len(s.errs) == 0 {
+		s.tokens = append(s.tokens, NewToken(EOF, "", nil, s.line))
 	}
-	s.tokens = append(s.tokens, NewToken(EOF, "", nil, s.line))
-	return s.tokens, nil
+	return s.tokens
 }
 
 func (s *scanner) addToken(t TokenType) {
@@ -146,7 +150,7 @@ func (s *scanner) scantoken() {
 			}
 
 			if s.isAtEnd() {
-				s.err = NewLineError(s.line, "", "Unterminated notes.")
+				s.errs = append(s.errs, NewLineError(s.line, string(s.buf[s.start:s.current]), "Unterminated notes."))
 				return
 			}
 			// The closing */.
@@ -170,7 +174,7 @@ func (s *scanner) scantoken() {
 		} else if isAlpha(c) {
 			s.identifier()
 		} else {
-			s.err = NewLineError(s.line, "", "Unexpected character.")
+			s.errs = append(s.errs, NewLineError(s.line, "", "Unterminated character."))
 		}
 	}
 }
@@ -189,7 +193,8 @@ func (s *scanner) readNumber() {
 	literal := s.buf[s.start:s.current]
 	f, err := strconv.ParseFloat(string(literal), 64)
 	if err != nil {
-		panic(err)
+		s.errs = append(s.errs, NewLineError(s.line, "", err.Error()))
+		return
 	}
 	s.addTokenWithLiteral(NUMBER, f)
 	return
@@ -208,7 +213,7 @@ func (s *scanner) readString() {
 	}
 
 	if s.isAtEnd() {
-		s.err = NewLineError(s.line, "", "Unterminated string.")
+		s.errs = append(s.errs, NewLineError(s.line, string(s.buf[s.start:s.current]), "Unterminated string."))
 		return
 	}
 
@@ -253,5 +258,6 @@ func NewScanner(src io.Reader) *scanner {
 		src:    src,
 		line:   1,
 		tokens: make([]*Token, 0),
+		errs:   make([]error, 0),
 	}
 }
