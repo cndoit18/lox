@@ -14,7 +14,7 @@ func NewInterpreter() *interpreter {
 type interpreter struct {
 }
 
-func (i *interpreter) VisitorBinaryExpr(e *BinaryExpr[any]) any {
+func (i *interpreter) VisitorBinary(e *Binary[any]) any {
 	left := i.evaluate(e.Left)
 	right := i.evaluate(e.Right)
 	switch e.Token.t {
@@ -55,15 +55,15 @@ func (i *interpreter) VisitorBinaryExpr(e *BinaryExpr[any]) any {
 	return nil
 }
 
-func (i *interpreter) VisitorGroupingExpr(e *GroupingExpr[any]) any {
+func (i *interpreter) VisitorGrouping(e *Grouping[any]) any {
 	return i.evaluate(e.Expression)
 }
 
-func (i *interpreter) VisitorLiteralExpr(e *LiteralExpr[any]) any {
+func (i *interpreter) VisitorLiteral(e *Literal[any]) any {
 	return e.value
 }
 
-func (i *interpreter) VisitorUnaryExpr(e *UnaryExpr[any]) any {
+func (i *interpreter) VisitorUnary(e *Unary[any]) any {
 	right := i.evaluate(e.Right)
 	switch e.Token.t {
 	case MINUS:
@@ -74,7 +74,7 @@ func (i *interpreter) VisitorUnaryExpr(e *UnaryExpr[any]) any {
 	return nil
 }
 
-func (i *interpreter) evaluate(e Expr[any]) any {
+func (i *interpreter) evaluate(e Stmt[any]) any {
 	if e == nil {
 		return nil
 	}

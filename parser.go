@@ -14,20 +14,28 @@ func NewParser[T any](tokens ...*Token) *parser[T] {
 	}
 }
 
-func (p *parser[T]) Parse() Expr[T] {
+func (p *parser[T]) Parse() []Stmt[T] {
+	statements := []Stmt[T]{}
+	for !p.isAtEnd() {
+		statements = append(statements, p.statement())
+	}
+	return statements
+}
+
+func (p *parser[T]) statement() Stmt[T] {
 	return p.expression()
 }
 
 // expression     → equality ;
-func (p *parser[T]) expression() Expr[T] {
+func (p *parser[T]) expression() Stmt[T] {
 	return p.equality()
 }
 
 // equality       → comparison ( ( "!=" | "==" ) comparison )* ;
-func (p *parser[T]) equality() Expr[T] {
+func (p *parser[T]) equality() Stmt[T] {
 	expr := p.comparison()
 	for p.match(BANG_EQUAL, EQUAL_EQUAL) {
-		expr = &BinaryExpr[T]{
+		expr = &Binary[T]{
 			Left:  expr,
 			Token: p.previous(),
 			Right: p.comparison(),
@@ -37,11 +45,11 @@ func (p *parser[T]) equality() Expr[T] {
 }
 
 // comparison     → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
-func (p *parser[T]) comparison() Expr[T] {
+func (p *parser[T]) comparison() Stmt[T] {
 	expr := p.term()
 
 	for p.match(GREATER, GREATER_EQUAL, LESS, LESS_EQUAL) {
-		expr = &BinaryExpr[T]{
+		expr = &Binary[T]{
 			Left:  expr,
 			Token: p.previous(),
 			Right: p.term(),
@@ -51,10 +59,10 @@ func (p *parser[T]) comparison() Expr[T] {
 }
 
 // term           → factor ( ( "-" | "+" ) factor )* ;
-func (p *parser[T]) term() Expr[T] {
+func (p *parser[T]) term() Stmt[T] {
 	expr := p.factor()
 	for p.match(MINUS, PLUS) {
-		expr = &BinaryExpr[T]{
+		expr = &Binary[T]{
 			Left:  expr,
 			Token: p.previous(),
 			Right: p.factor(),
@@ -64,10 +72,10 @@ func (p *parser[T]) term() Expr[T] {
 }
 
 // factor         → unary ( ( "/" | "*" ) unary )* ;
-func (p *parser[T]) factor() Expr[T] {
+func (p *parser[T]) factor() Stmt[T] {
 	expr := p.unary()
 	for p.match(SLASH, STAR) {
-		expr = &BinaryExpr[T]{
+		expr = &Binary[T]{
 			Left:  expr,
 			Token: p.previous(),
 			Right: p.unary(),
@@ -79,9 +87,9 @@ func (p *parser[T]) factor() Expr[T] {
 // unary          → ( "!" | "-" ) unary
 //
 //	| primary ;
-func (p *parser[T]) unary() Expr[T] {
+func (p *parser[T]) unary() Stmt[T] {
 	if p.match(BANG, MINUS) {
-		return &UnaryExpr[T]{
+		return &Unary[T]{
 			Token: p.previous(),
 			Right: p.unary(),
 		}
@@ -92,34 +100,34 @@ func (p *parser[T]) unary() Expr[T] {
 // primary        → NUMBER | STRING | "true" | "false" | "nil"
 //                | "(" expression ")" ;
 
-func (p *parser[T]) primary() Expr[T] {
+func (p *parser[T]) primary() Stmt[T] {
 	if p.match(FALSE) {
-		return &LiteralExpr[T]{
+		return &Literal[T]{
 			value: false,
 		}
 	}
 
 	if p.match(TRUE) {
-		return &LiteralExpr[T]{
+		return &Literal[T]{
 			value: true,
 		}
 	}
 
 	if p.match(NIL) {
-		return &LiteralExpr[T]{
+		return &Literal[T]{
 			value: nil,
 		}
 	}
 
 	if p.match(STRING, NUMBER) {
-		return &LiteralExpr[T]{
+		return &Literal[T]{
 			value: p.previous().literal,
 		}
 	}
 	if p.match(LEFT_PAREN) {
 		expr := p.expression()
 		if p.match(RIGHT_PAREN) {
-			return &GroupingExpr[T]{
+			return &Grouping[T]{
 				Expression: expr,
 			}
 		}

@@ -26,25 +26,29 @@ func runFile(path string) error {
 	}
 	defer f.Close()
 
-	return run(f)
+	return run(f, nil)
 }
 
-func run(r io.Reader) error {
+func run(r io.Reader, callback func(o any)) error {
 	defer func() {
 		if r := recover(); r != nil {
 			fmt.Println(r)
 		}
 	}()
 	scan := NewScanner(r)
-	tokens := NewScanner(r).ScanTokens()
+	tokens := scan.ScanTokens()
 	if err := scan.Err(); err != nil {
 		return err
 	}
-	expr := NewParser[any](tokens...).Parse()
-	if expr == nil {
-		return nil
+
+	interpreter := NewInterpreter()
+	stmts := NewParser[any](tokens...).Parse()
+	for _, stmt := range stmts {
+		r := stmt.Accept(interpreter)
+		if callback != nil {
+			callback(r)
+		}
 	}
-	fmt.Println(expr.Accept(NewInterpreter()))
 	return nil
 }
 
@@ -53,7 +57,9 @@ func runPrompt() error {
 
 	fmt.Printf("> ")
 	for scan.Scan() {
-		run(strings.NewReader(scan.Text()))
+		run(strings.NewReader(scan.Text()), func(o any) {
+			fmt.Println(o)
+		})
 		fmt.Printf("> ")
 	}
 

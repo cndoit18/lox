@@ -1,47 +1,47 @@
 package main
 
-type Expr[T any] interface {
+type Stmt[T any] interface {
 	Accept(v Visitor[T]) T
 }
 
-type BinaryExpr[T any] struct {
-	Left  Expr[T]
+type Binary[T any] struct {
+	Left  Stmt[T]
 	Token *Token
-	Right Expr[T]
+	Right Stmt[T]
 }
 
-func (e *BinaryExpr[T]) Accept(v Visitor[T]) T {
-	return v.VisitorBinaryExpr(e)
+func (e *Binary[T]) Accept(v Visitor[T]) T {
+	return v.VisitorBinary(e)
 }
 
-type GroupingExpr[T any] struct {
-	Expression Expr[T]
+type Grouping[T any] struct {
+	Expression Stmt[T]
 }
 
-func (e *GroupingExpr[T]) Accept(v Visitor[T]) T {
-	return v.VisitorGroupingExpr(e)
+func (e *Grouping[T]) Accept(v Visitor[T]) T {
+	return v.VisitorGrouping(e)
 }
 
-type LiteralExpr[T any] struct {
+type Literal[T any] struct {
 	value any
 }
 
-func (e *LiteralExpr[T]) Accept(v Visitor[T]) T {
-	return v.VisitorLiteralExpr(e)
+func (e *Literal[T]) Accept(v Visitor[T]) T {
+	return v.VisitorLiteral(e)
 }
 
-type UnaryExpr[T any] struct {
+type Unary[T any] struct {
 	Token *Token
-	Right Expr[T]
+	Right Stmt[T]
 }
 
-func (e *UnaryExpr[T]) Accept(v Visitor[T]) T {
-	return v.VisitorUnaryExpr(e)
+func (e *Unary[T]) Accept(v Visitor[T]) T {
+	return v.VisitorUnary(e)
 }
 
 type Visitor[T any] interface {
-	VisitorBinaryExpr(*BinaryExpr[T]) T
-	VisitorGroupingExpr(*GroupingExpr[T]) T
-	VisitorLiteralExpr(*LiteralExpr[T]) T
-	VisitorUnaryExpr(*UnaryExpr[T]) T
+	VisitorBinary(*Binary[T]) T
+	VisitorGrouping(*Grouping[T]) T
+	VisitorLiteral(*Literal[T]) T
+	VisitorUnary(*Unary[T]) T
 }
