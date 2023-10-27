@@ -26,10 +26,10 @@ func runFile(path string) error {
 	}
 	defer f.Close()
 
-	return run(f, nil)
+	return run(f)
 }
 
-func run(r io.Reader, callback func(o any)) error {
+func run(r io.Reader) error {
 	defer func() {
 		if r := recover(); r != nil {
 			fmt.Println(r)
@@ -44,10 +44,7 @@ func run(r io.Reader, callback func(o any)) error {
 	interpreter := NewInterpreter()
 	stmts := NewParser[any](tokens...).Parse()
 	for _, stmt := range stmts {
-		r := stmt.Accept(interpreter)
-		if callback != nil {
-			callback(r)
-		}
+		stmt.Accept(interpreter)
 	}
 	return nil
 }
@@ -57,9 +54,7 @@ func runPrompt() error {
 
 	fmt.Printf("> ")
 	for scan.Scan() {
-		run(strings.NewReader(scan.Text()), func(o any) {
-			fmt.Println(o)
-		})
+		run(strings.NewReader(scan.Text()))
 		fmt.Printf("> ")
 	}
 

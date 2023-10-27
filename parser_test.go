@@ -6,7 +6,7 @@ import (
 )
 
 func TestParser(t *testing.T) {
-	scanner := NewScanner(strings.NewReader("print 123;"))
+	scanner := NewScanner(strings.NewReader("3 + 3;"))
 	tokens := scanner.ScanTokens()
 	parse := NewParser[string](tokens...)
 	stmts := parse.Parse()
