@@ -42,6 +42,14 @@ func (p *AstPrinter) VisitorUnary(e *Unary[string]) string {
 	return p.parenthesize(e.Token.lexeme, e.Right)
 }
 
+func (p *AstPrinter) VisitorPrint(e *Print[string]) string {
+	return p.parenthesize("print", e.Expression)
+}
+
+func (p *AstPrinter) VisitorExpression(e *Expression[string]) string {
+	return p.parenthesize("expression", e.Expression)
+}
+
 func (p *AstPrinter) VisitorLiteral(e *Literal[string]) string {
 	if e.value == nil {
 		return "nil"

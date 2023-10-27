@@ -22,8 +22,28 @@ func (p *parser[T]) Parse() []Stmt[T] {
 	return statements
 }
 
+// statement      → exprStmt | printStmt ;
 func (p *parser[T]) statement() Stmt[T] {
-	return p.expression()
+	if p.match(PRINT) {
+		return p.printStmt()
+	}
+	return p.expressionStatement()
+}
+
+// print      → "print" expression ";" ;
+func (p *parser[T]) printStmt() Stmt[T] {
+	expr := p.expression()
+	p.consume(SEMICOLON, "Expect ';' after value.")
+	return &Print[T]{
+		Expression: expr,
+	}
+}
+
+// exprStmt       → expression ";" ;
+func (p *parser[T]) expressionStatement() Stmt[T] {
+	expr := p.expression()
+	p.consume(SEMICOLON, "Expect ';' after value.")
+	return &Expression[T]{Expression: expr}
 }
 
 // expression     → equality ;
@@ -139,7 +159,7 @@ func (p *parser[T]) primary() Stmt[T] {
 // helper
 func (p *parser[T]) match(tks ...TokenType) bool {
 	for _, t := range tks {
-		if !p.isAtEnd() && t == p.peek().t {
+		if p.check(t) {
 			p.advance()
 			return true
 		}
@@ -164,4 +184,19 @@ func (p *parser[T]) peek() *Token {
 
 func (p *parser[T]) previous() *Token {
 	return p.tokens[p.current-1]
+}
+
+func (p *parser[T]) check(t TokenType) bool {
+	if p.isAtEnd() {
+		return false
+	}
+	return p.peek().t == t
+}
+
+func (p *parser[T]) consume(t TokenType, msg string) *Token {
+	if p.check(t) {
+		return p.advance()
+	}
+
+	panic(NewRuntimeError(p.peek(), msg))
 }

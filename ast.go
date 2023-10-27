@@ -39,9 +39,27 @@ func (e *Unary[T]) Accept(v Visitor[T]) T {
 	return v.VisitorUnary(e)
 }
 
+type Print[T any] struct {
+	Expression Stmt[T]
+}
+
+func (e *Print[T]) Accept(v Visitor[T]) T {
+	return v.VisitorPrint(e)
+}
+
+type Expression[T any] struct {
+	Expression Stmt[T]
+}
+
+func (e *Expression[T]) Accept(v Visitor[T]) T {
+	return v.VisitorExpression(e)
+}
+
 type Visitor[T any] interface {
 	VisitorBinary(*Binary[T]) T
 	VisitorGrouping(*Grouping[T]) T
 	VisitorLiteral(*Literal[T]) T
 	VisitorUnary(*Unary[T]) T
+	VisitorPrint(*Print[T]) T
+	VisitorExpression(*Expression[T]) T
 }

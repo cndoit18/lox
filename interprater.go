@@ -74,6 +74,16 @@ func (i *interpreter) VisitorUnary(e *Unary[any]) any {
 	return nil
 }
 
+func (i *interpreter) VisitorPrint(e *Print[any]) any {
+	value := i.evaluate(e)
+	fmt.Println(value)
+	return nil
+}
+
+func (i *interpreter) VisitorExpression(e *Expression[any]) any {
+	return i.evaluate(e)
+}
+
 func (i *interpreter) evaluate(e Stmt[any]) any {
 	if e == nil {
 		return nil

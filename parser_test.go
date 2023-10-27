@@ -6,7 +6,7 @@ import (
 )
 
 func TestParser(t *testing.T) {
-	scanner := NewScanner(strings.NewReader("3==3"))
+	scanner := NewScanner(strings.NewReader("print 123;"))
 	tokens := scanner.ScanTokens()
 	parse := NewParser[string](tokens...)
 	stmts := parse.Parse()
@@ -15,6 +15,6 @@ func TestParser(t *testing.T) {
 		t.Log(scanner.Err())
 	}
 	for _, stmt := range stmts {
-		stmt.Accept(print)
+		t.Log(stmt.Accept(print))
 	}
 }
