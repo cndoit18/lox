@@ -40,7 +40,8 @@ func runFile(path string) error {
 func run(r io.Reader) error {
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Println(r)
+			fmt.Fprintln(os.Stderr, r)
+			os.Exit(1)
 		}
 	}()
 	scan, err := scanner.NewScanner(r)
