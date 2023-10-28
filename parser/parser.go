@@ -18,16 +18,46 @@ func NewParser[T any](tokens ...token.Token) *parser[T] {
 	}
 }
 
+// program        → declaration* EOF ;
 func (p *parser[T]) Parse() ([]ast.Stmt[T], error) {
-	statements := []ast.Stmt[T]{}
+	program := []ast.Stmt[T]{}
 	for p.hasNext() {
-		stmt, err := p.statement()
+		stmt, err := p.declaration()
 		if err != nil {
 			return nil, err
 		}
-		statements = append(statements, stmt)
+		program = append(program, stmt)
 	}
-	return statements, nil
+	return program, nil
+}
+
+// declaration    → varDecl | statement ;
+func (p *parser[T]) declaration() (ast.Stmt[T], error) {
+	if p.match(token.VAR) {
+		return p.varDecl()
+	}
+	return p.statement()
+}
+
+// varDecl        → "var" IDENTIFIER ( "=" expression )? ";" ;
+func (p *parser[T]) varDecl() (ast.Stmt[T], error) {
+	if p.match(token.IDENTIFIER) {
+		stmtVar := &ast.StmtVar[T]{
+			Name: p.previous(),
+		}
+		if p.match(token.EQUAL) {
+			expr, err := p.expression()
+			if err != nil {
+				return nil, err
+			}
+			stmtVar.Initializer = expr
+		}
+		if err := p.consume(token.SEMICOLON, "Expect ';' after value."); err != nil {
+			return nil, err
+		}
+		return stmtVar, nil
+	}
+	return nil, newParseError(p.peek(), "Expect IDENTIFIER after value.")
 }
 
 // statement      → exprStmt | printStmt ;
@@ -173,7 +203,7 @@ func (p *parser[T]) unary() (ast.Expr[T], error) {
 }
 
 // primary        → NUMBER | STRING | "true" | "false" | "nil"
-//                | "(" expression ")" ;
+//                | "(" expression ")" | IDENTIFIER ;
 
 func (p *parser[T]) primary() (ast.Expr[T], error) {
 	if p.match(token.FALSE) {
@@ -199,6 +229,13 @@ func (p *parser[T]) primary() (ast.Expr[T], error) {
 			Value: p.previous().Literal,
 		}, nil
 	}
+
+	if p.match(token.IDENTIFIER) {
+		return &ast.ExprVaiable[T]{
+			Name: p.previous(),
+		}, nil
+	}
+
 	if p.match(token.LEFT_PAREN) {
 		expr, err := p.expression()
 		if err != nil {

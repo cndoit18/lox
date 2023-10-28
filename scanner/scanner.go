@@ -192,7 +192,7 @@ func (s *scanner) readString() {
 
 	// The closing ".
 	s.advance()
-	s.appendToken(token.STRING, withLiteral(s.buf[s.start+1:s.current-1]))
+	s.appendToken(token.STRING, withLiteral(string(s.buf[s.start+1:s.current-1])))
 }
 
 func (s *scanner) readNumber() {

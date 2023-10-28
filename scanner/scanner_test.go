@@ -66,6 +66,12 @@ func TestNewScanner(t *testing.T) {
 			wantErr: false,
 			want:    []token.TokenType{token.PRINT, token.NUMBER, token.SEMICOLON, token.EOF},
 		},
+		{
+			name:    "var",
+			args:    args{strings.NewReader("var x = 3;")},
+			wantErr: false,
+			want:    []token.TokenType{token.VAR, token.IDENTIFIER, token.EQUAL, token.NUMBER, token.SEMICOLON, token.EOF},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

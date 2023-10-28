@@ -1,6 +1,7 @@
 package ast
 
 import (
+	"fmt"
 	"reflect"
 
 	"github.com/cndoit18/lox/token"
@@ -11,6 +12,7 @@ type ExprVisitor[T any] interface {
 	VisitorExprGrouping(*ExprGrouping[T]) T
 	VisitorExprLiteral(*ExprLiteral[T]) T
 	VisitorExprUnary(*ExprUnary[T]) T
+	VisitorExprVaiable(*ExprVaiable[T]) T
 }
 
 type Expr[T any] interface {
@@ -52,9 +54,19 @@ func (e *ExprUnary[T]) Accept(v ExprVisitor[T]) T {
 	return v.VisitorExprUnary(e)
 }
 
+type ExprVaiable[T any] struct {
+	Name token.Token
+}
+
+func (e *ExprVaiable[T]) Accept(v ExprVisitor[T]) T {
+	return v.VisitorExprVaiable(e)
+}
+
 var _ ExprVisitor[any] = calculator{}
 
-type calculator struct{}
+type calculator struct {
+	environment map[string]any
+}
 
 func (c calculator) VisitorExprBinary(e *ExprBinary[any]) any {
 	if e == nil {
@@ -67,9 +79,8 @@ func (c calculator) VisitorExprBinary(e *ExprBinary[any]) any {
 		return left.(float64) - right.(float64)
 	case token.PLUS:
 		ls, lok := left.(string)
-		rs, rok := right.(string)
-		if lok && rok {
-			return ls + rs
+		if lok {
+			return ls + fmt.Sprint(right)
 		}
 		checkNumberOperands(e.Token, left, right)
 		return left.(float64) + right.(float64)
@@ -126,6 +137,18 @@ func (c calculator) VisitorExprUnary(e *ExprUnary[any]) any {
 		return isTruthy(right)
 	}
 	return nil
+}
+
+func (c calculator) VisitorExprVaiable(s *ExprVaiable[any]) any {
+	if s == nil {
+		return nil
+	}
+
+	value, ok := c.environment[s.Name.Lexeme]
+	if !ok {
+		panic(newRuntimeError(s.Name, "Undefined variable '"+s.Name.Lexeme+"'."))
+	}
+	return value
 }
 
 func isTruthy(obj any) bool {

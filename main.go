@@ -17,9 +17,13 @@ func main() {
 		fmt.Println("Usage: lox [script]")
 		os.Exit(64)
 	} else if len(os.Args) == 2 {
-		runFile(os.Args[1])
+		if err := runFile(os.Args[1]); err != nil {
+			panic(err)
+		}
 	} else {
-		runPrompt()
+		if err := runPrompt(); err != nil {
+			panic(err)
+		}
 	}
 }
 
