@@ -13,6 +13,7 @@ type ExprVisitor[T any] interface {
 	VisitorExprLiteral(*ExprLiteral[T]) T
 	VisitorExprUnary(*ExprUnary[T]) T
 	VisitorExprVaiable(*ExprVaiable[T]) T
+	VisitorExprAssign(*ExprAssign[T]) T
 }
 
 type Expr[T any] interface {
@@ -60,6 +61,15 @@ type ExprVaiable[T any] struct {
 
 func (e *ExprVaiable[T]) Accept(v ExprVisitor[T]) T {
 	return v.VisitorExprVaiable(e)
+}
+
+type ExprAssign[T any] struct {
+	Name  string
+	Value Expr[T]
+}
+
+func (e *ExprAssign[T]) Accept(v ExprVisitor[T]) T {
+	return v.VisitorExprAssign(e)
 }
 
 var _ ExprVisitor[any] = calculator{}
@@ -137,6 +147,18 @@ func (c calculator) VisitorExprUnary(e *ExprUnary[any]) any {
 		return isTruthy(right)
 	}
 	return nil
+}
+
+func (c calculator) VisitorExprAssign(e *ExprAssign[any]) any {
+	if e == nil {
+		return nil
+	}
+	if _, ok := c.environment[e.Name]; ok {
+		c.environment[e.Name] = c.evaluate(e.Value)
+		return nil
+	}
+
+	panic(newRuntimeError(token.Token{}, "Undefined variable '"+e.Name+"'."))
 }
 
 func (c calculator) VisitorExprVaiable(s *ExprVaiable[any]) any {

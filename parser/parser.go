@@ -95,9 +95,32 @@ func (p *parser[T]) exprStmt() (ast.Stmt[T], error) {
 	return &ast.StmtExpr[T]{Expression: expr}, nil
 }
 
-// expression     → equality ;
+// expression     → assignment ;
 func (p *parser[T]) expression() (ast.Expr[T], error) {
-	return p.equality()
+	return p.assignment()
+}
+
+// assignment     → IDENTIFIER "=" assignment | equality ;
+func (p *parser[T]) assignment() (ast.Expr[T], error) {
+	expr, err := p.equality()
+	if err != nil {
+		return nil, err
+	}
+	if p.match(token.EQUAL) {
+		equals := p.previous()
+		value, err := p.assignment()
+		if err != nil {
+			return nil, err
+		}
+		if e, ok := expr.(*ast.ExprVaiable[T]); ok {
+			return &ast.ExprAssign[T]{
+				Name:  e.Name.Lexeme,
+				Value: value,
+			}, nil
+		}
+		panic(newParseError(equals, "Invalid assignment target."))
+	}
+	return expr, nil
 }
 
 // equality       → comparison ( ( "!=" | "==" ) comparison )* ;

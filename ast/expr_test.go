@@ -131,6 +131,11 @@ func (p printer) VisitorExprUnary(e *ExprUnary[string]) string {
 	return p.parenthesize(e.Token.Lexeme, e.Right)
 }
 
+func (p printer) VisitorExprAssign(e *ExprAssign[string]) string {
+	p.t.Helper()
+	return p.parenthesize(e.Name)
+}
+
 func (p printer) VisitorExprVaiable(e *ExprVaiable[string]) string {
 	p.t.Helper()
 	return p.parenthesize(e.Name.Lexeme)
