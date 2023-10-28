@@ -6,6 +6,10 @@ import (
 	"io"
 	"os"
 	"strings"
+
+	"github.com/cndoit18/lox/ast"
+	"github.com/cndoit18/lox/parser"
+	"github.com/cndoit18/lox/scanner"
 )
 
 func main() {
@@ -35,16 +39,24 @@ func run(r io.Reader) error {
 			fmt.Println(r)
 		}
 	}()
-	scan := NewScanner(r)
+	scan, err := scanner.NewScanner(r)
+	if err != nil {
+		return err
+	}
+
 	tokens := scan.ScanTokens()
 	if err := scan.Err(); err != nil {
 		return err
 	}
 
-	interpreter := NewInterpreter()
-	stmts := NewParser[any](tokens...).Parse()
+	parse := parser.NewParser[any](tokens...)
+	stmts, err := parse.Parse()
+	if err != nil {
+		return err
+	}
+	visitor := ast.NewVisitor()
 	for _, stmt := range stmts {
-		stmt.Accept(interpreter)
+		stmt.Accept(visitor)
 	}
 	return nil
 }
