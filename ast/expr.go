@@ -64,7 +64,7 @@ func (e *ExprVaiable[T]) Accept(v ExprVisitor[T]) T {
 }
 
 type ExprAssign[T any] struct {
-	Name  string
+	Name  token.Token
 	Value Expr[T]
 }
 
@@ -75,7 +75,7 @@ func (e *ExprAssign[T]) Accept(v ExprVisitor[T]) T {
 var _ ExprVisitor[any] = calculator{}
 
 type calculator struct {
-	environment map[string]any
+	environment Environment
 }
 
 func (c calculator) VisitorExprBinary(e *ExprBinary[any]) any {
@@ -153,12 +153,9 @@ func (c calculator) VisitorExprAssign(e *ExprAssign[any]) any {
 	if e == nil {
 		return nil
 	}
-	if _, ok := c.environment[e.Name]; ok {
-		c.environment[e.Name] = c.evaluate(e.Value)
-		return nil
-	}
 
-	panic(newRuntimeError(token.Token{}, "Undefined variable '"+e.Name+"'."))
+	c.environment.Set(e.Name, c.evaluate(e.Value))
+	return nil
 }
 
 func (c calculator) VisitorExprVaiable(s *ExprVaiable[any]) any {
@@ -166,11 +163,7 @@ func (c calculator) VisitorExprVaiable(s *ExprVaiable[any]) any {
 		return nil
 	}
 
-	value, ok := c.environment[s.Name.Lexeme]
-	if !ok {
-		panic(newRuntimeError(s.Name, "Undefined variable '"+s.Name.Lexeme+"'."))
-	}
-	return value
+	return c.environment.Get(s.Name)
 }
 
 func isTruthy(obj any) bool {

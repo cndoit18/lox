@@ -60,12 +60,32 @@ func (p *parser[T]) varDecl() (ast.Stmt[T], error) {
 	return nil, newParseError(p.peek(), "Expect IDENTIFIER after value.")
 }
 
-// statement      → exprStmt | printStmt ;
+// statement      → exprStmt | printStmt | block ;
 func (p *parser[T]) statement() (ast.Stmt[T], error) {
 	if p.match(token.PRINT) {
 		return p.printStmt()
 	}
+	if p.match(token.LEFT_BRACE) {
+		return p.black()
+	}
 	return p.exprStmt()
+}
+
+func (p *parser[T]) black() (ast.Stmt[T], error) {
+	statements := []ast.Stmt[T]{}
+	for !p.check(token.RIGHT_BRACE) && p.hasNext() {
+		stmt, err := p.declaration()
+		if err != nil {
+			return nil, err
+		}
+		statements = append(statements, stmt)
+	}
+	if err := p.consume(token.RIGHT_BRACE, "Expect '}' after block."); err != nil {
+		return nil, err
+	}
+	return &ast.StmtBlock[T]{
+		Statements: statements,
+	}, nil
 }
 
 // print      → "print" expression ";" ;
@@ -114,7 +134,7 @@ func (p *parser[T]) assignment() (ast.Expr[T], error) {
 		}
 		if e, ok := expr.(*ast.ExprVaiable[T]); ok {
 			return &ast.ExprAssign[T]{
-				Name:  e.Name.Lexeme,
+				Name:  e.Name,
 				Value: value,
 			}, nil
 		}
