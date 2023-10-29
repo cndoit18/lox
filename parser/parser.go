@@ -60,7 +60,7 @@ func (p *parser[T]) varDecl() (ast.Stmt[T], error) {
 	return nil, newParseError(p.peek(), "Expect IDENTIFIER after value.")
 }
 
-// statement      → exprStmt | ifStmt | printStmt | block ;
+// statement      → exprStmt | ifStmt | printStmt | whileStmt | block ;
 func (p *parser[T]) statement() (ast.Stmt[T], error) {
 	if p.match(token.PRINT) {
 		return p.printStmt()
@@ -71,7 +71,29 @@ func (p *parser[T]) statement() (ast.Stmt[T], error) {
 	if p.match(token.IF) {
 		return p.ifStmt()
 	}
+
+	if p.match(token.WHILE) {
+		return p.whileStmt()
+	}
 	return p.exprStmt()
+}
+
+// whileStmt      → "while" "(" expression ")" statement ;
+func (p *parser[T]) whileStmt() (ast.Stmt[T], error) {
+	p.consume(token.LEFT_PAREN, "Expect '(' after 'while'.")
+	condition, err := p.expression()
+	if err != nil {
+		return nil, err
+	}
+	p.consume(token.RIGHT_PAREN, "Expect ')' after while condition.")
+	stmt, err := p.statement()
+	if err != nil {
+		return nil, err
+	}
+	return &ast.StmtWhile[T]{
+		Condition: condition,
+		Body:      stmt,
+	}, nil
 }
 
 // ifStmt         → "if" "(" expression ")" statement

@@ -12,6 +12,7 @@ type StmtVisitor[T any] interface {
 	VisitorStmtVar(*StmtVar[T]) T
 	VisitorStmtBlock(*StmtBlock[T]) T
 	VisitorStmtIf(*StmtIf[T]) T
+	VisitorStmtWhile(*StmtWhile[T]) T
 }
 
 type Stmt[T any] interface {
@@ -61,6 +62,15 @@ func (e *StmtVar[T]) Accept(v StmtVisitor[T]) T {
 	return v.VisitorStmtVar(e)
 }
 
+type StmtWhile[T any] struct {
+	Condition Expr[T]
+	Body      Stmt[T]
+}
+
+func (e *StmtWhile[T]) Accept(v StmtVisitor[T]) T {
+	return v.VisitorStmtWhile(e)
+}
+
 func NewVisitor() StmtVisitor[any] {
 	return &interprater{
 		calculator: calculator{
@@ -96,7 +106,7 @@ func (i *interprater) VisitorStmtVar(s *StmtVar[any]) any {
 	if s == nil {
 		return nil
 	}
-	i.environment.Init(s.Name, i.evaluate(s.Initializer))
+	i.environment.Set(s.Name, i.evaluate(s.Initializer))
 	return nil
 }
 
@@ -104,13 +114,16 @@ func (i *interprater) VisitorStmtBlock(s *StmtBlock[any]) any {
 	if s == nil {
 		return nil
 	}
-	inner := interprater{
-		calculator: calculator{
-			environment: NewEnvironment(i.environment),
-		},
-	}
+
+	return i.executeBlock(s, NewEnvironment(i.environment))
+}
+
+func (i *interprater) executeBlock(s *StmtBlock[any], e Environment) any {
+	original := i.environment
+	i.environment = e
+	defer func() { i.environment = original }()
 	for _, stmt := range s.Statements {
-		stmt.Accept(&inner)
+		stmt.Accept(i)
 	}
 	return nil
 }
@@ -126,6 +139,17 @@ func (i *interprater) VisitorStmtIf(s *StmtIf[any]) any {
 
 	if s.ElseBranch != nil {
 		return s.ElseBranch.Accept(i)
+	}
+	return nil
+}
+
+func (i *interprater) VisitorStmtWhile(s *StmtWhile[any]) any {
+	if s == nil {
+		return nil
+	}
+
+	for isTruthy(i.evaluate(s.Condition)) {
+		s.Body.Accept(i)
 	}
 	return nil
 }

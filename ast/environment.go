@@ -5,8 +5,7 @@ import "github.com/cndoit18/lox/token"
 type Environment interface {
 	Get(token.Token) any
 	Set(token.Token, any)
-	Init(token.Token, any)
-	Has(token.Token) bool
+	Assign(token.Token, any)
 }
 
 type environment struct {
@@ -33,25 +32,19 @@ func (e environment) Get(key token.Token) any {
 	return e.enclosing.Get(key)
 }
 
-func (e environment) Init(key token.Token, val any) {
+func (e environment) Set(key token.Token, val any) {
 	e.data[key.Lexeme] = val
 }
 
-func (e environment) Has(key token.Token) bool {
+func (e environment) Assign(key token.Token, val any) {
 	if _, ok := e.data[key.Lexeme]; ok {
-		return true
-	}
-	if e.enclosing != nil {
-		return e.enclosing.Has(key)
-	}
-	return false
-}
-
-func (e environment) Set(key token.Token, val any) {
-	if e.Has(key) {
 		e.data[key.Lexeme] = val
 		return
 	}
 
-	panic(newRuntimeError(key, "Undefined variable '"+key.Lexeme+"'."))
+	if e.enclosing == nil {
+		panic(newRuntimeError(key, "Undefined variable '"+key.Lexeme+"'."))
+	}
+
+	e.enclosing.Assign(key, val)
 }

@@ -7,7 +7,7 @@ print "three";
 var x = 3 + 4; // 7
 {
     print "x=" + x;
-    x = 4;
+    var x = 4;
     print x; // 4
 }
 print x; // 7

@@ -164,8 +164,7 @@ func (c calculator) VisitorExprAssign(e *ExprAssign[any]) any {
 	if e == nil {
 		return nil
 	}
-
-	c.environment.Set(e.Name, c.evaluate(e.Value))
+	c.environment.Assign(e.Name, c.evaluate(e.Value))
 	return nil
 }
 
