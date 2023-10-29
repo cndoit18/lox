@@ -14,6 +14,7 @@ type ExprVisitor[T any] interface {
 	VisitorExprUnary(*ExprUnary[T]) T
 	VisitorExprVaiable(*ExprVaiable[T]) T
 	VisitorExprAssign(*ExprAssign[T]) T
+	VisitorExprLogical(*ExprLogical[T]) T
 }
 
 type Expr[T any] interface {
@@ -70,6 +71,16 @@ type ExprAssign[T any] struct {
 
 func (e *ExprAssign[T]) Accept(v ExprVisitor[T]) T {
 	return v.VisitorExprAssign(e)
+}
+
+type ExprLogical[T any] struct {
+	Left     Expr[T]
+	Operator token.Token
+	Right    Expr[T]
+}
+
+func (e *ExprLogical[T]) Accept(v ExprVisitor[T]) T {
+	return v.VisitorExprLogical(e)
 }
 
 var _ ExprVisitor[any] = calculator{}
@@ -164,6 +175,23 @@ func (c calculator) VisitorExprVaiable(s *ExprVaiable[any]) any {
 	}
 
 	return c.environment.Get(s.Name)
+}
+
+func (c calculator) VisitorExprLogical(s *ExprLogical[any]) any {
+	if s == nil {
+		return nil
+	}
+	left := c.evaluate(s.Left)
+	if s.Operator.Type == token.OR {
+		if isTruthy(left) {
+			return left
+		}
+	} else {
+		if !isTruthy(left) {
+			return left
+		}
+	}
+	return c.evaluate(s.Right)
 }
 
 func isTruthy(obj any) bool {

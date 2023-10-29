@@ -141,6 +141,11 @@ func (p printer) VisitorExprVaiable(e *ExprVaiable[string]) string {
 	return p.parenthesize(e.Name.Lexeme)
 }
 
+func (p printer) VisitorExprLogical(e *ExprLogical[string]) string {
+	p.t.Helper()
+	return p.parenthesize(e.Operator.Lexeme, e.Left, e.Right)
+}
+
 func (p printer) parenthesize(name string, exprs ...Expr[string]) string {
 	p.t.Helper()
 	builder := &strings.Builder{}

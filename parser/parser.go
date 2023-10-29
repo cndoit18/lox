@@ -150,9 +150,53 @@ func (p *parser[T]) expression() (ast.Expr[T], error) {
 	return p.assignment()
 }
 
-// assignment     → IDENTIFIER "=" assignment | equality ;
-func (p *parser[T]) assignment() (ast.Expr[T], error) {
+// logicOr       → logicAnd ( "or" logicAnd )* ;
+func (p *parser[T]) logicOr() (ast.Expr[T], error) {
+	expr, err := p.logicAnd()
+	if err != nil {
+		return nil, err
+	}
+
+	for p.match(token.OR) {
+		operator := p.previous()
+		right, err := p.logicAnd()
+		if err != nil {
+			return nil, err
+		}
+		expr = &ast.ExprLogical[T]{
+			Left:     expr,
+			Operator: operator,
+			Right:    right,
+		}
+	}
+	return expr, nil
+}
+
+// logicAnd      → equality ( "and" equality )* ;
+func (p *parser[T]) logicAnd() (ast.Expr[T], error) {
 	expr, err := p.equality()
+	if err != nil {
+		return nil, err
+	}
+
+	for p.match(token.AND) {
+		operator := p.previous()
+		right, err := p.equality()
+		if err != nil {
+			return nil, err
+		}
+		expr = &ast.ExprLogical[T]{
+			Left:     expr,
+			Operator: operator,
+			Right:    right,
+		}
+	}
+	return expr, nil
+}
+
+// assignment     → IDENTIFIER "=" assignment | logicOr ;
+func (p *parser[T]) assignment() (ast.Expr[T], error) {
+	expr, err := p.logicOr()
 	if err != nil {
 		return nil, err
 	}
