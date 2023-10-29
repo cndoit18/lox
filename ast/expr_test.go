@@ -92,7 +92,7 @@ func TestCalculator(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c := calculator{}
+			c := &interprater{}
 			got := tt.expr.Accept(c)
 			if got != tt.want {
 				t.Errorf("Accept() got = %v, want = %v", got, tt.want)
@@ -144,6 +144,11 @@ func (p printer) VisitorExprVaiable(e *ExprVaiable[string]) string {
 func (p printer) VisitorExprLogical(e *ExprLogical[string]) string {
 	p.t.Helper()
 	return p.parenthesize(e.Operator.Lexeme, e.Left, e.Right)
+}
+
+func (p printer) VisitorExprCall(e *ExprCall[string]) string {
+	p.t.Helper()
+	return p.parenthesize(e.Paren.Lexeme, append([]Expr[string]{e.Callee}, e.Arguments...)...)
 }
 
 func (p printer) parenthesize(name string, exprs ...Expr[string]) string {

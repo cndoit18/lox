@@ -13,6 +13,7 @@ type StmtVisitor[T any] interface {
 	VisitorStmtBlock(*StmtBlock[T]) T
 	VisitorStmtIf(*StmtIf[T]) T
 	VisitorStmtWhile(*StmtWhile[T]) T
+	VisitorStmtFunction(*StmtFunction[T]) T
 }
 
 type Stmt[T any] interface {
@@ -71,18 +72,26 @@ func (e *StmtWhile[T]) Accept(v StmtVisitor[T]) T {
 	return v.VisitorStmtWhile(e)
 }
 
+type StmtFunction[T any] struct {
+	Name   token.Token
+	Params []token.Token
+	Body   Stmt[T]
+}
+
+func (e *StmtFunction[T]) Accept(v StmtVisitor[T]) T {
+	return v.VisitorStmtFunction(e)
+}
+
 func NewVisitor() StmtVisitor[any] {
 	return &interprater{
-		calculator: calculator{
-			environment: NewEnvironment(nil),
-		},
+		environment: NewEnvironment(nil),
 	}
 }
 
 var _ StmtVisitor[any] = &interprater{}
 
 type interprater struct {
-	calculator
+	environment Environment
 }
 
 func (i *interprater) VisitorStmtExpr(s *StmtExpr[any]) any {
@@ -140,6 +149,15 @@ func (i *interprater) VisitorStmtIf(s *StmtIf[any]) any {
 	if s.ElseBranch != nil {
 		return s.ElseBranch.Accept(i)
 	}
+	return nil
+}
+
+func (i *interprater) VisitorStmtFunction(s *StmtFunction[any]) any {
+	if s == nil {
+		return nil
+	}
+	function := WrapperFunction(s)
+	i.environment.Set(s.Name, function)
 	return nil
 }
 

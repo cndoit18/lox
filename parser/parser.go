@@ -31,12 +31,58 @@ func (p *parser[T]) Parse() ([]ast.Stmt[T], error) {
 	return program, nil
 }
 
-// declaration    → varDecl | statement ;
+// declaration    → function | varDecl | statement ;
 func (p *parser[T]) declaration() (ast.Stmt[T], error) {
+	if p.match(token.FUN) {
+		return p.function()
+	}
 	if p.match(token.VAR) {
 		return p.varDecl()
 	}
 	return p.statement()
+}
+
+func (p *parser[T]) function() (ast.Stmt[T], error) {
+	if err := p.consume(token.IDENTIFIER, "Expect function name."); err != nil {
+		return nil, err
+	}
+	name := p.previous()
+	if err := p.consume(token.LEFT_PAREN, "Expect '(' after function name."); err != nil {
+		return nil, err
+	}
+	parameters := []token.Token{}
+	if !p.check(token.RIGHT_PAREN) {
+		for {
+			if len(parameters) >= 255 {
+				return nil, newParseError(p.peek(), "Can't have more than 255 parameters.")
+			}
+
+			if err := p.consume(token.IDENTIFIER, "Expect parameter name."); err != nil {
+				return nil, err
+			}
+
+			parameters = append(parameters, p.previous())
+			if !p.match(token.COMMA) {
+				break
+			}
+		}
+
+	}
+	if err := p.consume(token.RIGHT_PAREN, "Expect ')' after parameters."); err != nil {
+		return nil, err
+	}
+	if err := p.consume(token.LEFT_BRACE, "Expect '{}' befor function body."); err != nil {
+		return nil, err
+	}
+	body, err := p.block()
+	if err != nil {
+		return nil, err
+	}
+	return &ast.StmtFunction[T]{
+		Name:   name,
+		Params: parameters,
+		Body:   body,
+	}, nil
 }
 
 // varDecl        → "var" IDENTIFIER ( "=" expression )? ";" ;
@@ -66,7 +112,7 @@ func (p *parser[T]) statement() (ast.Stmt[T], error) {
 		return p.printStmt()
 	}
 	if p.match(token.LEFT_BRACE) {
-		return p.black()
+		return p.block()
 	}
 	if p.match(token.IF) {
 		return p.ifStmt()
@@ -203,7 +249,7 @@ func (p *parser[T]) ifStmt() (ast.Stmt[T], error) {
 	}, nil
 }
 
-func (p *parser[T]) black() (ast.Stmt[T], error) {
+func (p *parser[T]) block() (ast.Stmt[T], error) {
 	statements := []ast.Stmt[T]{}
 	for !p.check(token.RIGHT_BRACE) && p.hasNext() {
 		stmt, err := p.declaration()
@@ -403,9 +449,7 @@ func (p *parser[T]) factor() (ast.Expr[T], error) {
 	return expr, nil
 }
 
-// unary          → ( "!" | "-" ) unary
-//
-//	| primary ;
+// unary          → ( "!" | "-" ) unary | call ;
 func (p *parser[T]) unary() (ast.Expr[T], error) {
 	if p.match(token.BANG, token.MINUS) {
 		token := p.previous()
@@ -418,7 +462,62 @@ func (p *parser[T]) unary() (ast.Expr[T], error) {
 			Right: right,
 		}, nil
 	}
-	return p.primary()
+	return p.call()
+}
+
+// call           → primary ( "(" arguments? ")" )* ;
+func (p *parser[T]) call() (ast.Expr[T], error) {
+	expr, err := p.primary()
+	if err != nil {
+		return nil, err
+	}
+	for {
+		if p.match(token.LEFT_PAREN) {
+			expr, err = p.finishCall(expr)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			break
+		}
+	}
+	return expr, nil
+}
+
+func (p *parser[T]) finishCall(callee ast.Expr[T]) (ast.Expr[T], error) {
+	arguments := []ast.Expr[T]{}
+	if !p.check(token.RIGHT_PAREN) {
+		for {
+			if len(arguments) >= 255 {
+				return nil, newParseError(p.peek(), "Can't have more than 255 arguments.")
+			}
+			expr, err := p.expression()
+			if err != nil {
+				return nil, err
+			}
+
+			arguments = append(arguments, expr)
+			if !p.match(token.COMMA) {
+				break
+			}
+		}
+	}
+
+	err := p.consume(token.RIGHT_PAREN,
+		"Expect ')' after arguments.")
+	if err != nil {
+		return nil, err
+	}
+	return &ast.ExprCall[T]{
+		Callee:    callee,
+		Paren:     p.previous(),
+		Arguments: arguments,
+	}, nil
+}
+
+// arguments      → expression ( "," expression )* ;
+func (p *parser[T]) arguments() (ast.Expr[T], error) {
+	return nil, nil
 }
 
 // primary        → NUMBER | STRING | "true" | "false" | "nil"
