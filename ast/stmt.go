@@ -11,10 +11,21 @@ type StmtVisitor[T any] interface {
 	VisitorStmtExpr(*StmtExpr[T]) T
 	VisitorStmtVar(*StmtVar[T]) T
 	VisitorStmtBlock(*StmtBlock[T]) T
+	VisitorStmtIf(*StmtIf[T]) T
 }
 
 type Stmt[T any] interface {
 	Accept(v StmtVisitor[T]) T
+}
+
+type StmtIf[T any] struct {
+	Condition  Expr[T]
+	ThenBranch Stmt[T]
+	ElseBranch Stmt[T]
+}
+
+func (e *StmtIf[T]) Accept(v StmtVisitor[T]) T {
+	return v.VisitorStmtIf(e)
 }
 
 type StmtPrint[T any] struct {
@@ -100,6 +111,21 @@ func (i *interprater) VisitorStmtBlock(s *StmtBlock[any]) any {
 	}
 	for _, stmt := range s.Statements {
 		stmt.Accept(&inner)
+	}
+	return nil
+}
+
+func (i *interprater) VisitorStmtIf(s *StmtIf[any]) any {
+	if s == nil {
+		return nil
+	}
+
+	if isTruthy(i.evaluate(s.Condition)) {
+		return s.ThenBranch.Accept(i)
+	}
+
+	if s.ElseBranch != nil {
+		return s.ElseBranch.Accept(i)
 	}
 	return nil
 }

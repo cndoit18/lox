@@ -60,7 +60,7 @@ func (p *parser[T]) varDecl() (ast.Stmt[T], error) {
 	return nil, newParseError(p.peek(), "Expect IDENTIFIER after value.")
 }
 
-// statement      → exprStmt | printStmt | block ;
+// statement      → exprStmt | ifStmt | printStmt | block ;
 func (p *parser[T]) statement() (ast.Stmt[T], error) {
 	if p.match(token.PRINT) {
 		return p.printStmt()
@@ -68,7 +68,37 @@ func (p *parser[T]) statement() (ast.Stmt[T], error) {
 	if p.match(token.LEFT_BRACE) {
 		return p.black()
 	}
+	if p.match(token.IF) {
+		return p.ifStmt()
+	}
 	return p.exprStmt()
+}
+
+// ifStmt         → "if" "(" expression ")" statement
+// ( "else" statement )? ;
+func (p *parser[T]) ifStmt() (ast.Stmt[T], error) {
+	p.consume(token.LEFT_PAREN, "Expect '(' after 'if'.")
+	condition, err := p.expression()
+	if err != nil {
+		return nil, err
+	}
+	p.consume(token.RIGHT_PAREN, "Expect ')' after if condition.")
+	thenBranch, err := p.statement()
+	if err != nil {
+		return nil, err
+	}
+	var elseBranch ast.Stmt[T]
+	if p.match(token.ELSE) {
+		elseBranch, err = p.statement()
+		if err != nil {
+			return nil, err
+		}
+	}
+	return &ast.StmtIf[T]{
+		Condition:  condition,
+		ThenBranch: thenBranch,
+		ElseBranch: elseBranch,
+	}, nil
 }
 
 func (p *parser[T]) black() (ast.Stmt[T], error) {
