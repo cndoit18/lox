@@ -14,6 +14,7 @@ type StmtVisitor[T any] interface {
 	VisitorStmtIf(*StmtIf[T]) T
 	VisitorStmtWhile(*StmtWhile[T]) T
 	VisitorStmtFunction(*StmtFunction[T]) T
+	VisitorStmtReturn(*StmtReturn[T]) T
 }
 
 type Stmt[T any] interface {
@@ -36,6 +37,15 @@ type StmtPrint[T any] struct {
 
 func (e *StmtPrint[T]) Accept(v StmtVisitor[T]) T {
 	return v.VisitorStmtPrint(e)
+}
+
+type StmtReturn[T any] struct {
+	Keyword token.Token
+	Value   Expr[T]
+}
+
+func (e *StmtReturn[T]) Accept(v StmtVisitor[T]) T {
+	return v.VisitorStmtReturn(e)
 }
 
 type StmtExpr[T any] struct {
@@ -161,6 +171,14 @@ func (i *interprater) VisitorStmtFunction(s *StmtFunction[any]) any {
 	return nil
 }
 
+func (i *interprater) VisitorStmtReturn(s *StmtReturn[any]) any {
+	if s == nil {
+		return nil
+	}
+
+	panic(returnObject{Value: i.evaluate(s.Value)})
+}
+
 func (i *interprater) VisitorStmtWhile(s *StmtWhile[any]) any {
 	if s == nil {
 		return nil
@@ -168,6 +186,11 @@ func (i *interprater) VisitorStmtWhile(s *StmtWhile[any]) any {
 
 	for isTruthy(i.evaluate(s.Condition)) {
 		s.Body.Accept(i)
+
 	}
 	return nil
+}
+
+type returnObject struct {
+	Value any
 }

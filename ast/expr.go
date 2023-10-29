@@ -14,7 +14,16 @@ type warpperFunction struct {
 func (w *warpperFunction) Arity() int {
 	return len(w.fun.Params)
 }
-func (w *warpperFunction) Call(v ExprVisitor[any], params ...any) any {
+func (w *warpperFunction) Call(v ExprVisitor[any], params ...any) (ret any) {
+	defer func() {
+		if r := recover(); r != nil {
+			if v, ok := r.(returnObject); ok {
+				ret = v.Value
+			} else {
+				panic(r)
+			}
+		}
+	}()
 	c := v.(*interprater)
 	environment := NewEnvironment(c.environment)
 	for i, param := range w.fun.Params {

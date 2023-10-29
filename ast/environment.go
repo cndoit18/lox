@@ -11,16 +11,19 @@ type Environment interface {
 type environment struct {
 	enclosing Environment
 	data      map[string]any
+	ret       any
+	hasRet    bool
 }
 
 func NewEnvironment(enclosing Environment) Environment {
 	return &environment{
 		enclosing: enclosing,
 		data:      map[string]any{},
+		ret:       nil,
 	}
 }
 
-func (e environment) Get(key token.Token) any {
+func (e *environment) Get(key token.Token) any {
 	if v, ok := e.data[key.Lexeme]; ok {
 		return v
 	}
@@ -32,11 +35,11 @@ func (e environment) Get(key token.Token) any {
 	return e.enclosing.Get(key)
 }
 
-func (e environment) Set(key token.Token, val any) {
+func (e *environment) Set(key token.Token, val any) {
 	e.data[key.Lexeme] = val
 }
 
-func (e environment) Assign(key token.Token, val any) {
+func (e *environment) Assign(key token.Token, val any) {
 	if _, ok := e.data[key.Lexeme]; ok {
 		e.data[key.Lexeme] = val
 		return
