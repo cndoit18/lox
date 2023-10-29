@@ -1,5 +1,11 @@
-func add(a, b, c) {
-  print a + b + c;
+func table() {
+    for (var i = 1; i <= 9; i = i + 1) {
+        for (var j = 1; j <= 9; j = j + 1) {
+            print "" + i + "*" + j + "=" + i * j + "\t";
+        }
+        print "\n";
+    }
 }
 
-add(1, 2, 3);
+print "乘法表\n";
+table();

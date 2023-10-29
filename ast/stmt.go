@@ -107,7 +107,7 @@ func (i *interprater) VisitorStmtPrint(s *StmtPrint[any]) any {
 		return nil
 	}
 	value := i.evaluate(s.Expression)
-	fmt.Println(value)
+	fmt.Print(value)
 	return nil
 }
 
