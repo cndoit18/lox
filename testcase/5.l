@@ -7,5 +7,5 @@ func table() {
     }
 }
 
-print "乘法表\n";
+print "table\n";
 table();
