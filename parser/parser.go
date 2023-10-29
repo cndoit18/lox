@@ -60,7 +60,7 @@ func (p *parser[T]) varDecl() (ast.Stmt[T], error) {
 	return nil, newParseError(p.peek(), "Expect IDENTIFIER after value.")
 }
 
-// statement      → exprStmt | ifStmt | printStmt | whileStmt | block ;
+// statement      → exprStmt | ifStmt | printStmt | whileStmt | forStmt | block ;
 func (p *parser[T]) statement() (ast.Stmt[T], error) {
 	if p.match(token.PRINT) {
 		return p.printStmt()
@@ -74,6 +74,10 @@ func (p *parser[T]) statement() (ast.Stmt[T], error) {
 
 	if p.match(token.WHILE) {
 		return p.whileStmt()
+	}
+
+	if p.match(token.FOR) {
+		return p.forStmt()
 	}
 	return p.exprStmt()
 }
@@ -93,6 +97,82 @@ func (p *parser[T]) whileStmt() (ast.Stmt[T], error) {
 	return &ast.StmtWhile[T]{
 		Condition: condition,
 		Body:      stmt,
+	}, nil
+}
+
+// forStmt        → "for" "(" ( varDecl | exprStmt | ";" ) expression? ";" expression? ")" statement ;
+func (p *parser[T]) forStmt() (ast.Stmt[T], error) {
+	p.consume(token.LEFT_PAREN, "Expect '(' after 'for'.")
+	var (
+		initializer ast.Stmt[T]
+		err         error
+	)
+	if p.match(token.SEMICOLON) {
+		initializer = nil
+	} else if p.match(token.VAR) {
+		initializer, err = p.varDecl()
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		initializer, err = p.exprStmt()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	var condition ast.Expr[T]
+	if !p.check(token.SEMICOLON) {
+		condition, err = p.expression()
+		if err != nil {
+			return nil, err
+		}
+	}
+	p.consume(token.SEMICOLON, "Expect ';' after loop condition.")
+	var increment ast.Expr[T]
+	if !p.check(token.RIGHT_PAREN) {
+		increment, err = p.expression()
+		if err != nil {
+			return nil, err
+		}
+	}
+	p.consume(token.RIGHT_PAREN, "Expect ')' after for clauses.")
+	statement, err := p.statement()
+	if err != nil {
+		return nil, err
+	}
+
+	body := []ast.Stmt[T]{}
+	if initializer != nil {
+		body = append(body, initializer)
+	}
+
+	if condition == nil {
+		condition = &ast.ExprLiteral[T]{Value: true}
+	}
+
+	whileStmts := []ast.Stmt[T]{statement}
+	if increment != nil {
+		whileStmts = append(whileStmts, &ast.StmtExpr[T]{Expression: increment})
+	}
+
+	body = append(body, &ast.StmtWhile[T]{
+		Condition: condition,
+		Body: &ast.StmtBlock[T]{
+			Statements: whileStmts,
+		},
+	})
+
+	// {
+	// 	var i = 0;
+	// 	while (i < 10) {
+	// 	  print i;
+	// 	  i = i + 1;
+	// 	}
+	// }
+
+	return &ast.StmtBlock[T]{
+		Statements: body,
 	}, nil
 }
 
