@@ -55,53 +55,6 @@ func TestExprVisitor(t *testing.T) {
 	}
 }
 
-func TestCalculator(t *testing.T) {
-	tests := []struct {
-		name string
-		expr Expr[any]
-		want any
-	}{
-		{
-			name: "ok",
-			expr: &ExprBinary[any]{
-				Left: &ExprUnary[any]{
-					Token: token.Token{
-						Type:    token.MINUS,
-						Lexeme:  "-",
-						Literal: nil,
-						Line:    1,
-					},
-					Right: &ExprLiteral[any]{
-						Value: float64(123),
-					},
-				},
-				Token: token.Token{
-					Type:    token.STAR,
-					Lexeme:  "*",
-					Literal: nil,
-					Line:    1,
-				},
-				Right: &ExprGrouping[any]{
-					Expression: &ExprLiteral[any]{
-						Value: float64(45.5),
-					},
-				},
-			},
-			want: -5596.5,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			c := &interprater{}
-			got := tt.expr.Accept(c)
-			if got != tt.want {
-				t.Errorf("Accept() got = %v, want = %v", got, tt.want)
-				return
-			}
-		})
-	}
-}
-
 var _ ExprVisitor[string] = printer{}
 
 type printer struct {

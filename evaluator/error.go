@@ -1,4 +1,4 @@
-package ast
+package evaluator
 
 import (
 	"fmt"

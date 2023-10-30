@@ -1,8 +1,6 @@
 package ast
 
 import (
-	"fmt"
-
 	"github.com/cndoit18/lox/token"
 )
 
@@ -90,107 +88,4 @@ type StmtFunction[T any] struct {
 
 func (e *StmtFunction[T]) Accept(v StmtVisitor[T]) T {
 	return v.VisitorStmtFunction(e)
-}
-
-func NewVisitor() StmtVisitor[any] {
-	return &interprater{
-		environment: NewEnvironment(nil),
-	}
-}
-
-var _ StmtVisitor[any] = &interprater{}
-
-type interprater struct {
-	environment Environment
-}
-
-func (i *interprater) VisitorStmtExpr(s *StmtExpr[any]) any {
-	if s == nil {
-		return nil
-	}
-
-	return i.evaluate(s.Expression)
-}
-
-func (i *interprater) VisitorStmtPrint(s *StmtPrint[any]) any {
-	if s == nil {
-		return nil
-	}
-	value := i.evaluate(s.Expression)
-	fmt.Print(value)
-	return nil
-}
-
-func (i *interprater) VisitorStmtVar(s *StmtVar[any]) any {
-	if s == nil {
-		return nil
-	}
-	i.environment.Set(s.Name, i.evaluate(s.Initializer))
-	return nil
-}
-
-func (i *interprater) VisitorStmtBlock(s *StmtBlock[any]) any {
-	if s == nil {
-		return nil
-	}
-
-	return i.executeBlock(s, NewEnvironment(i.environment))
-}
-
-func (i *interprater) executeBlock(s *StmtBlock[any], e Environment) any {
-	original := i.environment
-	i.environment = e
-	defer func() { i.environment = original }()
-	for _, stmt := range s.Statements {
-		stmt.Accept(i)
-	}
-	return nil
-}
-
-func (i *interprater) VisitorStmtIf(s *StmtIf[any]) any {
-	if s == nil {
-		return nil
-	}
-
-	if isTruthy(i.evaluate(s.Condition)) {
-		return s.ThenBranch.Accept(i)
-	}
-
-	if s.ElseBranch != nil {
-		return s.ElseBranch.Accept(i)
-	}
-	return nil
-}
-
-func (i *interprater) VisitorStmtFunction(s *StmtFunction[any]) any {
-	if s == nil {
-		return nil
-	}
-	function := WrapperFunction(s)
-	i.environment.Set(s.Name, function)
-	return nil
-}
-
-func (i *interprater) VisitorStmtReturn(s *StmtReturn[any]) any {
-	if s == nil {
-		return nil
-	}
-
-	panic(returnObject{Value: i.evaluate(s.Value)})
-}
-
-func (i *interprater) VisitorStmtWhile(s *StmtWhile[any]) any {
-	if s == nil {
-		return nil
-	}
-
-	for isTruthy(i.evaluate(s.Condition)) {
-		s.Body.Accept(i)
-
-	}
-	return nil
-}
-
-type returnObject struct {
-	Value any
 }

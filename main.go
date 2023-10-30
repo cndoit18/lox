@@ -7,7 +7,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/cndoit18/lox/ast"
+	"github.com/cndoit18/lox/evaluator"
 	"github.com/cndoit18/lox/parser"
 	"github.com/cndoit18/lox/scanner"
 )
@@ -61,9 +61,9 @@ func run(r io.Reader) error {
 	if err != nil {
 		return err
 	}
-	visitor := ast.NewVisitor()
+	evaluator := evaluator.New()
 	for _, stmt := range stmts {
-		stmt.Accept(visitor)
+		stmt.Accept(evaluator)
 	}
 	return nil
 }

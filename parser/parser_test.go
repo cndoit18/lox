@@ -3,7 +3,7 @@ package parser
 import (
 	"testing"
 
-	"github.com/cndoit18/lox/ast"
+	"github.com/cndoit18/lox/evaluator"
 	"github.com/cndoit18/lox/token"
 )
 
@@ -46,9 +46,9 @@ func TestNewParser(t *testing.T) {
 			if err != nil != tt.wantErr {
 				t.Errorf("Parse() error = %v, wantErr = %v", err, tt.wantErr)
 			}
-			visitor := ast.NewVisitor()
+			evaluator := evaluator.New()
 			for _, stmt := range stmts {
-				stmt.Accept(visitor)
+				stmt.Accept(evaluator)
 			}
 		})
 	}
