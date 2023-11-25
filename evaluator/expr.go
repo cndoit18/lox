@@ -16,11 +16,11 @@ func (i *evaluator) VisitorExprCall(s *ast.ExprCall[any]) any {
 	callee := i.evaluate(s.Callee)
 	function, ok := callee.(ast.Callable[any])
 	if !ok {
-		panic(newRuntimeError(s.Paren, "Can only call functions and classes."))
+		panic(newRuntimeError(s.Param, "Can only call functions and classes."))
 	}
 
 	if len(s.Arguments) != function.Arity() {
-		panic(newRuntimeError(s.Paren, fmt.Sprint("Expected ",
+		panic(newRuntimeError(s.Param, fmt.Sprint("Expected ",
 			function.Arity(), " arguments but got ",
 			len(s.Arguments), ".")))
 	}
@@ -108,16 +108,17 @@ func (i *evaluator) VisitorExprAssign(e *ast.ExprAssign[any]) any {
 	if e == nil {
 		return nil
 	}
-	i.environment.Assign(e.Name, i.evaluate(e.Value))
-	return nil
+	value := i.evaluate(e.Value)
+	i.environment.AssignAt(i.locals[e], e.Name, value)
+	return value
 }
 
-func (i *evaluator) VisitorExprVaiable(s *ast.ExprVaiable[any]) any {
+func (i *evaluator) VisitorExprVariable(s *ast.ExprVariable[any]) any {
 	if s == nil {
 		return nil
 	}
 
-	return i.environment.Get(s.Name)
+	return i.lookUpVariable(s.Name, s)
 }
 
 func (i *evaluator) VisitorExprLogical(s *ast.ExprLogical[any]) any {
@@ -160,4 +161,8 @@ func (i *evaluator) evaluate(e ast.Expr[any]) any {
 		return nil
 	}
 	return e.Accept(i)
+}
+
+func (i *evaluator) lookUpVariable(name token.Token, expr ast.Expr[any]) any {
+	return i.environment.GetAt(i.locals[expr], name)
 }

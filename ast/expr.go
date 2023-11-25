@@ -14,7 +14,7 @@ type ExprVisitor[T any] interface {
 	VisitorExprGrouping(*ExprGrouping[T]) T
 	VisitorExprLiteral(*ExprLiteral[T]) T
 	VisitorExprUnary(*ExprUnary[T]) T
-	VisitorExprVaiable(*ExprVaiable[T]) T
+	VisitorExprVariable(*ExprVariable[T]) T
 	VisitorExprAssign(*ExprAssign[T]) T
 	VisitorExprLogical(*ExprLogical[T]) T
 	VisitorExprCall(*ExprCall[T]) T
@@ -22,7 +22,7 @@ type ExprVisitor[T any] interface {
 
 type ExprCall[T any] struct {
 	Callee    Expr[T]
-	Paren     token.Token
+	Param     token.Token
 	Arguments []Expr[T]
 }
 
@@ -69,12 +69,12 @@ func (e *ExprUnary[T]) Accept(v ExprVisitor[T]) T {
 	return v.VisitorExprUnary(e)
 }
 
-type ExprVaiable[T any] struct {
+type ExprVariable[T any] struct {
 	Name token.Token
 }
 
-func (e *ExprVaiable[T]) Accept(v ExprVisitor[T]) T {
-	return v.VisitorExprVaiable(e)
+func (e *ExprVariable[T]) Accept(v ExprVisitor[T]) T {
+	return v.VisitorExprVariable(e)
 }
 
 type ExprAssign[T any] struct {

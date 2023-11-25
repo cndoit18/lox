@@ -89,7 +89,7 @@ func (p printer) VisitorExprAssign(e *ExprAssign[string]) string {
 	return p.parenthesize(e.Name.Lexeme)
 }
 
-func (p printer) VisitorExprVaiable(e *ExprVaiable[string]) string {
+func (p printer) VisitorExprVariable(e *ExprVariable[string]) string {
 	p.t.Helper()
 	return p.parenthesize(e.Name.Lexeme)
 }
@@ -101,7 +101,7 @@ func (p printer) VisitorExprLogical(e *ExprLogical[string]) string {
 
 func (p printer) VisitorExprCall(e *ExprCall[string]) string {
 	p.t.Helper()
-	return p.parenthesize(e.Paren.Lexeme, append([]Expr[string]{e.Callee}, e.Arguments...)...)
+	return p.parenthesize(e.Param.Lexeme, append([]Expr[string]{e.Callee}, e.Arguments...)...)
 }
 
 func (p printer) parenthesize(name string, exprs ...Expr[string]) string {

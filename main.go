@@ -62,8 +62,12 @@ func run(r io.Reader) error {
 		return err
 	}
 	evaluator := evaluator.New()
+	interpreter := evaluator.Interpreter()
 	for _, stmt := range stmts {
 		stmt.Accept(evaluator)
+	}
+	for _, stmt := range stmts {
+		stmt.Accept(interpreter)
 	}
 	return nil
 }

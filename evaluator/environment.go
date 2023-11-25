@@ -6,6 +6,8 @@ type Environment interface {
 	Get(token.Token) any
 	Set(token.Token, any)
 	Assign(token.Token, any)
+	GetAt(distance int, key token.Token) any
+	AssignAt(int, token.Token, any)
 }
 
 type environment struct {
@@ -35,8 +37,24 @@ func (e *environment) Get(key token.Token) any {
 	return e.enclosing.Get(key)
 }
 
+func (e *environment) GetAt(distance int, key token.Token) any {
+	if distance > 0 && e.enclosing != nil {
+		return e.enclosing.GetAt(distance-1, key)
+	}
+
+	return e.Get(key)
+}
+
 func (e *environment) Set(key token.Token, val any) {
 	e.data[key.Lexeme] = val
+}
+
+func (e *environment) AssignAt(distance int, key token.Token, val any) {
+	if distance > 0 && e.enclosing != nil {
+		e.enclosing.AssignAt(distance-1, key, val)
+	}
+
+	e.Assign(key, val)
 }
 
 func (e *environment) Assign(key token.Token, val any) {

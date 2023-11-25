@@ -39,14 +39,9 @@ func WrapperFunction(s *ast.StmtFunction[any]) ast.Callable[any] {
 	}
 }
 
-func New() *evaluator {
-	return &evaluator{
-		environment: NewEnvironment(nil),
-	}
-}
-
 type evaluator struct {
 	environment Environment
+	locals      map[ast.Expr[any]]int
 }
 
 func (i *evaluator) VisitorStmtExpr(s *ast.StmtExpr[any]) any {
@@ -134,6 +129,10 @@ func (i *evaluator) VisitorStmtWhile(s *ast.StmtWhile[any]) any {
 
 	}
 	return nil
+}
+
+func (i *evaluator) resolve(e ast.Expr[any], depth int) {
+	i.locals[e] = depth
 }
 
 type returnObject struct {

@@ -396,7 +396,7 @@ func (p *parser[T]) assignment() (ast.Expr[T], error) {
 		if err != nil {
 			return nil, err
 		}
-		if e, ok := expr.(*ast.ExprVaiable[T]); ok {
+		if e, ok := expr.(*ast.ExprVariable[T]); ok {
 			return &ast.ExprAssign[T]{
 				Name:  e.Name,
 				Value: value,
@@ -550,7 +550,7 @@ func (p *parser[T]) finishCall(callee ast.Expr[T]) (ast.Expr[T], error) {
 	}
 	return &ast.ExprCall[T]{
 		Callee:    callee,
-		Paren:     p.previous(),
+		Param:     p.previous(),
 		Arguments: arguments,
 	}, nil
 }
@@ -589,7 +589,7 @@ func (p *parser[T]) primary() (ast.Expr[T], error) {
 	}
 
 	if p.match(token.IDENTIFIER) {
-		return &ast.ExprVaiable[T]{
+		return &ast.ExprVariable[T]{
 			Name: p.previous(),
 		}, nil
 	}
